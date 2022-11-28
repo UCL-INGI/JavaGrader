@@ -4,6 +4,38 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+
+    <groupId>org.example</groupId>
+    <artifactId>JavaGrader</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+        </license>
+    </licenses>
+
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>Some tools to grade Java programming exercices.</description>
+    <url>https://github.com/UCL-INGI/JavaGrader</url>
+
+    <developers>
+        <developer>
+            <name>Augustin Delecluse</name>
+            <email>augustin.delecluse@uclouvain.be</email>
+            <organization>UCLouvain / ICTEAM / INGI</organization>
+            <organizationUrl>http://www.uclouvain.be</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/UCL-INGI/JavaGrader.git</connection>
+        <developerConnection>scm:git:ssh://github.com:UCL-INGI/JavaGrader.git</developerConnection>
+        <url>https://github.com/UCL-INGI/JavaGrader</url>
+    </scm>
+
     <properties>
         <tests>grade</tests> <!-- only runs the tests with the "grade" tag-->
         <maven.compiler.source>17</maven.compiler.source>
@@ -12,9 +44,6 @@
         <junit.platform.version>1.9.1</junit.platform.version>
     </properties>
 
-    <groupId>org.example</groupId>
-    <artifactId>JavaGrader</artifactId>
-    <version>1.0-SNAPSHOT</version>
     <build>
         <plugins>
             <plugin>
