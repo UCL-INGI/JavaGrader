@@ -164,7 +164,7 @@ This can easily be done by configuring your packages such that junit is not expo
 JavaGrader also provides a `ConditionalOrderingExtension`. This ensures that the test suite will disable all remaining tests as soon as one failure happens.
 This is best combined with `@TestMethodOrder(MethodOrderer.OrderAnnotation.class)` and `@Order` methods.
 
-```
+```java
 @ExtendWith(ConditionalOrderingExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Grade
@@ -277,7 +277,7 @@ TOTAL WITHOUT ABORTED 3/8
 
 JavaGrader overrides the `ClassLoader` that would normally be used within the tests. This ensures that a custom one is used, forbidding some imports through a `@Forbid`.
 
-```
+```java
 @Test
 @Grade
 @Forbid("java.lang.Thread")
@@ -288,7 +288,7 @@ public void invalidImportTest() {
 
 Some imports are always forbidden, such as `Thread` or `ClassLoader`. You can optionally allow such imports (bypassing a `@Forbid`)with `@Allow`
 
-```
+```java
 @Test
 @Grade
 @Allow("java.lang.Thread")
@@ -300,7 +300,7 @@ public void validImportTest() {
 
 Overriding the `ClassLoader` does have some side effects. If you find yourself in trouble when running tests, you can disable this feature with `@Grade(noSecurity = true)`
 
-```
+```java
 @Test
 @Grade(noSecurity = true)
 @Forbid("java.lang.Thread")

@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
 
-    <groupId>org.example</groupId>
+    <groupId>com.github.UCL-INGI</groupId>
     <artifactId>JavaGrader</artifactId>
-    <version>1.0.0</version>
+    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <licenses>
@@ -33,7 +33,7 @@
     <scm>
         <connection>scm:git:git://github.com/UCL-INGI/JavaGrader.git</connection>
         <developerConnection>scm:git:ssh://github.com:UCL-INGI/JavaGrader.git</developerConnection>
-        <url>https://github.com/UCL-INGI/JavaGrader</url>
+        <url>https://github.com/UCL-INGI/JavaGrader/tree/main</url>
     </scm>
 
     <properties>
