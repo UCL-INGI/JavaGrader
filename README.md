@@ -227,7 +227,7 @@ When using an autograder (I may already have told you that [INGInious](https://g
 you might want to output something nice (i.e. not text) for the students. JavaGrader can output a nice
 RestructuredText table (which is the default behavior):
 
-![Screenshot of the RST output](https://raw.githubusercontent.com/UCL-INGI/JavaGrader/blob/main/rst_screenshot.png "Screenshot of the RST output")
+![Screenshot of the RST output](https://raw.githubusercontent.com/UCL-INGI/JavaGrader/main/rst_screenshot.png "Screenshot of the RST output")
 
 ### Grading a class
 
