@@ -402,21 +402,11 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                     }
                     return true;
                 });
-                Class<?>[] convertedParamArgs = ml.get(0).getParameterTypes();
                 final Optional<Method> method = ReflectionUtils.findMethod(testInstance.getClass(), ml.get(0).getName(), ml.get(0).getParameterTypes());
                 List<Object> convertedArgs = new ArrayList<>();
                 for (int i = 0; i < l.size(); ++i) {
-                    Class<?> caster = (convertedParamArgs[i]);
-                    Object o;
-                    try {
-                        o = castObj(l.get(i), caster);
-                    } catch (JsonIOException e) {
-                        // repetition info is an interface, first try to construct one of those object
-                        Class<? extends LoadableRepetitionInfo> a = (Class<? extends LoadableRepetitionInfo>) caster.getClassLoader().loadClass("org.javagrader.LoadableRepetitionInfo");
-                        final int current = ((RepetitionInfo) l.get(i)).getCurrentRepetition();
-                        final int total = ((RepetitionInfo) l.get(i)).getTotalRepetitions();
-                        o = a.getConstructors()[0].newInstance(current, total);
-                    }
+                    Class<?> caster = modifiedClassLoader.loadClass(l.get(i).getClass().getName());
+                    Object o = castObj(l.get(i), caster);
                     convertedArgs.add(o);
                 }
                 final Executable e = () -> {
