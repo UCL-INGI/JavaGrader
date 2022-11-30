@@ -235,7 +235,7 @@ public class GraderExtension implements BeforeTestExecutionCallback,
         boolean gradedClass = c.isAnnotationPresent(Grade.class);
         boolean gradedMethod = m.isAnnotationPresent(Grade.class);
         if (gradedClass || gradedMethod) { // only add if this is a graded test
-            String methodName = context.getDisplayName();
+            String methodName = getFactoryTestPrefix(context) + context.getDisplayName();
             String className = getClassDisplayName(context);
             TestMethodResult r = new TestMethodResult(methodName, m, status , customGradingResult);
             if (!testClassResult.containsKey(className)) {
@@ -261,6 +261,14 @@ public class GraderExtension implements BeforeTestExecutionCallback,
             return getClassDisplayName(context.getParent().get());
         }
         return context.getDisplayName();
+    }
+
+    private String getFactoryTestPrefix(ExtensionContext context) {
+        Optional<ExtensionContext> opt = context.getParent().get().getParent();
+        if (opt.isPresent() && opt.get().getParent().isPresent()) {
+            return String.format("%s - ", context.getParent().get().getDisplayName());
+        }
+        return "";
     }
 
     @Override
@@ -395,7 +403,6 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                     }
                 }
                 // yes this is ugly but it is needed for parametric to be imported correctly...
-                // TODO better error message for this scenario
                 final Optional<Method> method;
                 try {
                     List<Method> ml = ReflectionUtils.findMethods(testInstance.getClass(), p -> {

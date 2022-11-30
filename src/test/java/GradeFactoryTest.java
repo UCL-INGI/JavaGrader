@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Grade
 public class GradeFactoryTest {
 
     @Grade
@@ -53,10 +54,5 @@ public class GradeFactoryTest {
     public void testTwice(RepetitionInfo info) {
         assertEquals(0, info.getCurrentRepetition() % 2);
     }
-
-    @RegisterExtension
-    static GraderExtension extension = GraderExtension.builder()
-            .printMode(PrintConstants.PrintMode.NORMAL)
-            .build();
 
 }
