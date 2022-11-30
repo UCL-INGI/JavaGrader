@@ -374,7 +374,7 @@ public class GraderExtension implements BeforeTestExecutionCallback,
             Classpath classpath = Classpath.current();
             Set<String> forbids = getForbidden(extensionContext);
             Set<String> allows = getAllowed(extensionContext);
-            ClassLoader modifiedClassLoader = classpath.newClassloader(forbids, allows);
+            RestrictedClassLoader modifiedClassLoader = classpath.newClassloader(forbids, allows);
             ClassLoader currentThreadPreviousClassLoader = replaceCurrentThreadClassLoader(modifiedClassLoader);
             String className = extensionContext.getRequiredTestClass().getName();
             final Class<?> testClass;
@@ -389,32 +389,58 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                 Object testInstance = ReflectionUtils.newInstance(testClass);
                 List<Object> l = invocationContext.getArguments();
                 Class<?>[] paramTypes = m.getParameterTypes();
-                // yes this is ugly but it is needed for parametric to be imported correctly...
-                List<Method> ml = ReflectionUtils.findMethods(testInstance.getClass(), p -> {
-                    if (!p.getName().equals(methodName))
-                        return false;
-                    Class<?>[] methodParams = p.getParameterTypes();
-                    if (methodParams.length != paramTypes.length)
-                        return false;
-                    for (int i = 0; i < paramTypes.length; ++i) {
-                        if (!methodParams[i].toString().equals(paramTypes[i].toString()))
-                            return false;
+                for (Class<?> c: paramTypes) {
+                    if (modifiedClassLoader.isForbidden(c.getName())) {
+                        throw new ClassNotFoundException("Failed to load the test instance as its contains a " + c.getName() + " parameter, which is forbidden");
                     }
-                    return true;
-                });
-                final Optional<Method> method = ReflectionUtils.findMethod(testInstance.getClass(), ml.get(0).getName(), ml.get(0).getParameterTypes());
-                List<Object> convertedArgs = new ArrayList<>();
-                for (int i = 0; i < l.size(); ++i) {
-                    Class<?> caster = modifiedClassLoader.loadClass(l.get(i).getClass().getName());
-                    Object o = castObj(l.get(i), caster);
-                    convertedArgs.add(o);
                 }
-                final Executable e = () -> {
-                    ReflectionUtils.invokeMethod(
-                            method.orElseThrow(() -> new IllegalStateException("No test method named " + methodName + " for class " + testClass)),
-                            testInstance,
-                            convertedArgs.toArray());
-                };
+                // yes this is ugly but it is needed for parametric to be imported correctly...
+                // TODO better error message for this scenario
+                final Optional<Method> method;
+                try {
+                    List<Method> ml = ReflectionUtils.findMethods(testInstance.getClass(), p -> {
+                        if (!p.getName().equals(methodName))
+                            return false;
+                        Class<?>[] methodParams = p.getParameterTypes();
+                        if (methodParams.length != paramTypes.length)
+                            return false;
+                        for (int i = 0; i < paramTypes.length; ++i) {
+                            if (!methodParams[i].toString().equals(paramTypes[i].toString()))
+                                return false;
+                        }
+                        return true;
+                    });
+                    method = ReflectionUtils.findMethod(testInstance.getClass(), ml.get(0).getName(), ml.get(0).getParameterTypes());
+                } catch (NoClassDefFoundError e) {
+                    throw new ClassNotFoundException("Failed to load the test instance. It may contain a method with a forbidden parameter type", e);
+                }
+                List<Object> convertedArgs = new ArrayList<>();
+                for (Object value : l) {
+                    String toLoad = value.getClass().getName();
+                    try {
+                        Class<?> caster = modifiedClassLoader.loadClass(toLoad);
+                        Object o = castObj(value, caster);
+                        convertedArgs.add(o);
+                    } catch (JsonSyntaxException e) {
+                        String message = String.format("Failed to provide argument of class %s (failed conversion to student's class loader using Gson. " +
+                                "Consider using @Grade(noSecurity = true), " +
+                                "use a simpler object type as input or refer to Gson doc to make it compatible)", toLoad);
+                        throw new JsonSyntaxException(message, e);
+                    } catch (ClassNotFoundException e) {
+                        String message;
+                        if (forbids.contains(toLoad)) {
+                            message = String.format("Failed to load class %s as it is forbidden", toLoad);
+                        } else {
+                            message = String.format("Failed to load class %s for unknown reason. " +
+                                    "Consider using @Grade(noSecurity = true)", toLoad);
+                        }
+                        throw new ClassNotFoundException(message, e);
+                    }
+                }
+                final Executable e = () -> ReflectionUtils.invokeMethod(
+                        method.orElseThrow(() -> new IllegalStateException("No test method named " + methodName + " for class " + testClass)),
+                        testInstance,
+                        convertedArgs.toArray());
 
                 if (g != null) {
                     long timeout = g.cpuTimeout() * 3;

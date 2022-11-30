@@ -78,9 +78,10 @@ Everything needed is located inside the files:
 To add it as a dependency of your project, you can add this to your pom.xml in maven:
 ```xml
 <dependency>
-  <groupId>xxx</groupId>
-  <artifactId>JavaGrader</artifactId>
-  <version>xxx</version>
+    <groupId>io.github.ucl-ingi</groupId>
+    <artifactId>JavaGrader</artifactId>
+    <version>1.0.0</version>
+    <scope>test</scope>
 </dependency>
 ```
 

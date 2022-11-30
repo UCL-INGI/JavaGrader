@@ -31,10 +31,12 @@ public class RestrictedClassLoader extends URLClassLoader {
 
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
-        if (whitelist != null && whitelist.contains(name))
-            return super.loadClass(name);
-        if(blacklist != null && blacklist.contains(name))
+        if (isForbidden(name))
             throw new ClassNotFoundException(String.format("%s is forbidden and cannot be imported", name));
         return super.loadClass(name);
+    }
+
+    public boolean isForbidden(String name) {
+        return (!(whitelist != null && whitelist.contains(name)) && blacklist != null && blacklist.contains(name));
     }
 }

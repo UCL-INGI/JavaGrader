@@ -1,13 +1,15 @@
 import org.javagrader.Allow;
 import org.javagrader.Forbid;
 import org.javagrader.Grade;
-import org.javagrader.GraderExtension;
 import org.javagrader.student.UnauthorizedCode;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 
 @Grade
@@ -55,6 +57,5 @@ public class InvalidImportTest {
         // works even though thread is forbidden, as the security is disabled
         UnauthorizedCode.staticMethodWithThread();
     }
-
 
 }
