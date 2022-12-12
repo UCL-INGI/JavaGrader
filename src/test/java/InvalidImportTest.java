@@ -58,4 +58,10 @@ public class InvalidImportTest {
         UnauthorizedCode.staticMethodWithThread();
     }
 
+    @Grade
+    @Test
+    public void testMaliciousTable() {
+        UnauthorizedCode.printMaliciousTable();
+    }
+
 }

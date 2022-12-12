@@ -12,22 +12,23 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Grade
 public class GradeFactoryTest {
 
     @Grade
     @ParameterizedTest
-    @ValueSource(strings = { "a", "b", "c" })
+    @ValueSource(strings = { "a", "b", "c"})
     void testWithString(String argument) {
         assertEquals("b", argument);
     }
 
-    // TODO use argument to run without the custom class loader
     @Grade
     @ParameterizedTest
     @MethodSource("customInputStream")
     void testWithCustomObject(CustomInput argument) {
+        assertNotNull(argument);
         assertEquals(0, argument.x);
     }
 
@@ -39,7 +40,7 @@ public class GradeFactoryTest {
     }
 
     static Stream<CustomInput> customInputStream() {
-        return Stream.of(new CustomInput(0), new CustomInput(1));
+        return Stream.of(new CustomInput(0), new CustomInput(1), null);
     }
 
     @Grade
@@ -49,7 +50,7 @@ public class GradeFactoryTest {
         assertEquals(0, argument % 2);
     }
 
-    @RepeatedTest(5)
+    @RepeatedTest(2)
     @Grade
     public void testTwice(RepetitionInfo info) {
         assertEquals(0, info.getCurrentRepetition() % 2);

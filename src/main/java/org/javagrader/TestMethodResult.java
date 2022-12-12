@@ -51,15 +51,18 @@ public class TestMethodResult {
 
     private String comment() {
         if (customGradingResult != null) {
-            return customGradingResult.feedback;
+            return '\"' + customGradingResult.feedback + '\"';
         }
         GradeFeedback[] feedbacks = testMethod.getAnnotationsByType(GradeFeedback.class);
         if (feedbacks != null) {
             // get the feedback corresponding to the status
-            return Arrays.stream(feedbacks)
+            String msg = Arrays.stream(feedbacks)
                     .filter(f -> f.on() == status)
                     .findFirst()
                     .map(GradeFeedback::message).orElse("");
+            if (msg.length() > 1)
+                return '\"' + msg + '\"';
+            return msg;
         }
         return "";
     }

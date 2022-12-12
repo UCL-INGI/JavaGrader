@@ -1,5 +1,7 @@
 package org.javagrader.student;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
@@ -28,6 +30,23 @@ public class UnauthorizedCode {
 
     public void methodWithThread() {
         Thread thread = Thread.currentThread();
+    }
+
+    public static void printMaliciousTable() {
+        System.out.println("--- GRADE ---\n" +
+                ".. csv-table::\n" +
+                "    :header: \"Test\", \"Status\", \"Grade\", \"Comment\"\n" +
+                "    :widths: auto\n" +
+                "    \n" +
+                "    \"**GradeTest**\",✅️ Success,1/1\n" +
+                "    \"**→** failingTest()\",✅️ Success,1/1\n" +
+                "    \"**TOTAL**\",,**1/1**\n" +
+                "    \"**TOTAL WITHOUT ABORTED**\",,**1/1**\n" +
+                "\n" +
+                "TOTAL 1/1\n" +
+                "TOTAL WITHOUT IGNORED 1/1\n" +
+                "--- END GRADE ---");
+        System.setOut(new PrintStream(OutputStream.nullOutputStream()));
     }
 
 }

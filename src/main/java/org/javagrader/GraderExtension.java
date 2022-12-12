@@ -12,16 +12,15 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.platform.commons.util.ReflectionUtils;
+import org.opentest4j.TestAbortedException;
 
 import static org.javagrader.PrintConstants.*;
 import static org.javagrader.TestResultStatus.SUCCESS;
@@ -37,13 +36,15 @@ public class GraderExtension implements BeforeTestExecutionCallback,
     /** Gate keeper to prevent multiple Threads within the same routine */
     private static final Lock LOCK = new ReentrantLock();
     private static boolean started = false;
+    private static final PrintStream originalStdOut = System.out;
     private PrintMode printMode = PrintMode.RST;
     private static Duration sumMaxCpuTimeout = Duration.ZERO;
     private static Duration sumMaxTimeout = Duration.ZERO;
     private static final String START_TIME = "start time";
     private static final String CPU_TIMEOUT = "cpu timeout";
     private static final String TIMEOUT_UNIT = "timeout units";
-    private static Map<String, TestClassResult> testClassResult = new HashMap<>();
+    private static Map<String, TestClassResult> testClassResult = new HashMap<>(); // TODO put in store context instead
+    // otherwise this value will be updated for the same JVM and cannot be used to run test over the test suite itself
     
     public GraderExtension(GraderBuilder builder) {
         this.printMode = builder.printMode;
@@ -56,7 +57,6 @@ public class GraderExtension implements BeforeTestExecutionCallback,
     public static GraderBuilder builder() {
         return new GraderBuilder();
     }
-
 
     public static class GraderBuilder {
         
@@ -274,6 +274,7 @@ public class GraderExtension implements BeforeTestExecutionCallback,
     @Override
     public void close() {
         if (printMode != PrintMode.NONE) {
+            System.setOut(originalStdOut);
             printSumTimeouts();
             printTable();
         }
@@ -360,6 +361,7 @@ public class GraderExtension implements BeforeTestExecutionCallback,
     private void intercept(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
         Timeout cTimeout = extensionContext.getRequiredTestClass().getAnnotation(Timeout.class);
         Timeout mTimeout = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class);
+        // TODO catch customgradingexception, use a context store and possibly set the test as success
         Grade g = null;
         if (cTimeout == null && mTimeout == null)
             g = getExistingGradeWithCpuTimeout(extensionContext);
@@ -397,12 +399,12 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                 Object testInstance = ReflectionUtils.newInstance(testClass);
                 List<Object> l = invocationContext.getArguments();
                 Class<?>[] paramTypes = m.getParameterTypes();
-                for (Class<?> c: paramTypes) {
+                for (Class<?> c : paramTypes) {
                     if (modifiedClassLoader.isForbidden(c.getName())) {
                         throw new ClassNotFoundException("Failed to load the test instance as its contains a " + c.getName() + " parameter, which is forbidden");
                     }
                 }
-                // yes this is ugly but it is needed for parametric to be imported correctly...
+                // yes this is ugly, but it is needed for parametric tests to be imported correctly...
                 final Optional<Method> method;
                 try {
                     List<Method> ml = ReflectionUtils.findMethods(testInstance.getClass(), p -> {
@@ -412,7 +414,8 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                         if (methodParams.length != paramTypes.length)
                             return false;
                         for (int i = 0; i < paramTypes.length; ++i) {
-                            if (!methodParams[i].toString().equals(paramTypes[i].toString()))
+                            //if (!methodParams[i].toString().equals(paramTypes[i].toString()))
+                            if (!isSameClass(methodParams[i], paramTypes[i]))
                                 return false;
                         }
                         return true;
@@ -423,25 +426,29 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                 }
                 List<Object> convertedArgs = new ArrayList<>();
                 for (Object value : l) {
-                    String toLoad = value.getClass().getName();
-                    try {
-                        Class<?> caster = modifiedClassLoader.loadClass(toLoad);
-                        Object o = castObj(value, caster);
-                        convertedArgs.add(o);
-                    } catch (JsonSyntaxException e) {
-                        String message = String.format("Failed to provide argument of class %s (failed conversion to student's class loader using Gson. " +
-                                "Consider using @Grade(noSecurity = true), " +
-                                "use a simpler object type as input or refer to Gson doc to make it compatible)", toLoad);
-                        throw new JsonSyntaxException(message, e);
-                    } catch (ClassNotFoundException e) {
-                        String message;
-                        if (forbids.contains(toLoad)) {
-                            message = String.format("Failed to load class %s as it is forbidden", toLoad);
-                        } else {
-                            message = String.format("Failed to load class %s for unknown reason. " +
-                                    "Consider using @Grade(noSecurity = true)", toLoad);
+                    if (value == null) {
+                        convertedArgs.add(null);
+                    } else {
+                        String toLoad = value.getClass().getName();
+                        try {
+                            Class<?> caster = modifiedClassLoader.loadClass(toLoad);
+                            Object o = castObj(value, caster);
+                            convertedArgs.add(o);
+                        } catch (JsonSyntaxException e) {
+                            String message = String.format("Failed to provide argument of class %s (failed conversion to student's class loader using Gson. " +
+                                    "Consider using @Grade(noSecurity = true), " +
+                                    "use a simpler object type as input or refer to Gson doc to make it compatible)", toLoad);
+                            throw new JsonSyntaxException(message, e);
+                        } catch (ClassNotFoundException e) {
+                            String message;
+                            if (forbids.contains(toLoad)) {
+                                message = String.format("Failed to load class %s as it is forbidden", toLoad);
+                            } else {
+                                message = String.format("Failed to load class %s for unknown reason. " +
+                                        "Consider using @Grade(noSecurity = true)", toLoad);
+                            }
+                            throw new ClassNotFoundException(message, e);
                         }
-                        throw new ClassNotFoundException(message, e);
                     }
                 }
                 final Executable e = () -> ReflectionUtils.invokeMethod(
@@ -463,6 +470,13 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                     e.execute();
                 }
 
+            } catch (Exception e1) {
+                // determine if the exception is a TestAbortedException from the modified class loader
+                Class<?> castedException = currentThreadPreviousClassLoader.loadClass(e1.getClass().getName());
+                if (castedException == TestAbortedException.class) {
+                    throw new TestAbortedException(e1.getMessage());
+                }
+                throw e1;
             } finally {
                 Thread.currentThread().setContextClassLoader(currentThreadPreviousClassLoader);
             }
@@ -572,8 +586,33 @@ public class GraderExtension implements BeforeTestExecutionCallback,
      * @return object loaded using the target class loader
      */
     private <T> T castObj(Object o, Class<T> target) throws JsonSyntaxException {
+        // Dear God, please forgive me for my sins
         Gson gson = new Gson();
         return gson.fromJson(gson.toJson(o), target);
+    }
+
+    /**
+     * Modified version of isinstance, that works on objects across different class loaders
+     *
+     * @return true if the
+     */
+    private boolean isInstance(Object o, Class<?> target) {
+        if (target.isInstance(o)) {
+            return true;
+        }
+        return o.getClass().toString().equals(target.toString());
+    }
+
+    /**
+     * Modified version of isinstance, that works on objects across different class loaders
+     *
+     * @return true if the
+     */
+    private <T> boolean isSameClass(Class<?> origin, Class<?> target) {
+        if (origin.equals(target)) {
+            return true;
+        }
+        return origin.toString().equals(target.toString());
     }
 
 }

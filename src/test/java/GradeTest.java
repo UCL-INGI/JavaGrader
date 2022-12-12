@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.javagrader.TestResultStatus.*;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.abort;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Grade
 public class GradeTest {
@@ -36,7 +38,7 @@ public class GradeTest {
     @Grade(value = 2)
     @Test
     void abortedTest() {
-        Assumptions.abort();
+        abort();
     }
 
     @Grade(value = 2)

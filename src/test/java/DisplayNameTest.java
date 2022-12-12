@@ -18,12 +18,7 @@ public class DisplayNameTest {
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("namedArguments")
     void testWithNamedArguments(String path) {
-        // TODO compatible with @Grade
-        /*
-         fails with an error message similar to "Failed to provide argument of class Thread
-         (failed conversion to student's class loader using gson. Consider using @Grade(noSecurity = true),
-         use a simpler object type as input or refer to gson doc to make it compatible)"
-         */
+
     }
 
     static Stream<Arguments> namedArguments() {

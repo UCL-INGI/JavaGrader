@@ -1,10 +1,8 @@
 import org.javagrader.CustomGradingResult;
 import org.javagrader.Grade;
-import org.javagrader.GraderExtension;
 import org.javagrader.TestResultStatus;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 @Grade
 public class CustomGradingTest {

@@ -1,8 +1,6 @@
 import org.javagrader.Allow;
 import org.javagrader.Grade;
-import org.javagrader.GraderExtension;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -12,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 @Grade
-public class TimeoutTests {
+public class TimeoutTest {
     // does not fail as the cpu timeout nor the wall clock timeout is exceeded
     @Grade(value = 1, cpuTimeout = 100, unit = TimeUnit.MILLISECONDS)
     @Timeout(2)
@@ -89,6 +87,7 @@ public class TimeoutTests {
 
     @RepeatedTest(2)
     @Grade(cpuTimeout = 50, unit = TimeUnit.MILLISECONDS)
+    @Allow("java.lang.Thread")
     public void testTwice2(RepetitionInfo info) throws Exception {
         Thread.sleep(200);
     }
