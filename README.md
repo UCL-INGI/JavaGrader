@@ -320,7 +320,7 @@ This can be used to filter the tests, for instance with the following command li
 mvn -Dtests=grade test
 ```
 
-Note that JavaGrader *does* run all unfiltered tests if it is registered.
+Note that JavaGrader *does* run all specified tests - graded or not.
 This means that the following tests will be run (although no result for it will be printed as there is no `@Grade` annotation)
 
 ```java
