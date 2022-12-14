@@ -3,6 +3,7 @@ package org.javagrader;
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
+import java.security.InvalidParameterException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -12,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonIOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.*;
@@ -365,7 +366,7 @@ public class GraderExtension implements BeforeTestExecutionCallback,
         Grade g = null;
         if (cTimeout == null && mTimeout == null)
             g = getExistingGradeWithCpuTimeout(extensionContext);
-        if (getExistingGradeWithNoSecurity(extensionContext) != null) {
+        if (!areImportRestricted(extensionContext)) {
             // no need to override the class loader
             if (g != null) {
                 long timeout = g.cpuTimeout() * 3;
@@ -385,6 +386,7 @@ public class GraderExtension implements BeforeTestExecutionCallback,
             Set<String> forbids = getForbidden(extensionContext);
             Set<String> allows = getAllowed(extensionContext);
             RestrictedClassLoader modifiedClassLoader = classpath.newClassloader(forbids, allows);
+            //ClassLoader modifiedClassLoader = new PermissiveClassLoader(Thread.currentThread().getContextClassLoader(), forbids, allows);
             ClassLoader currentThreadPreviousClassLoader = replaceCurrentThreadClassLoader(modifiedClassLoader);
             String className = extensionContext.getRequiredTestClass().getName();
             final Class<?> testClass;
@@ -433,12 +435,14 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                         try {
                             Class<?> caster = modifiedClassLoader.loadClass(toLoad);
                             Object o = castObj(value, caster);
+                            //Object o = modifiedClassLoader.convertInstance(toLoad, new Object().);
                             convertedArgs.add(o);
-                        } catch (JsonSyntaxException e) {
+                        } catch (JsonIOException e) {
                             String message = String.format("Failed to provide argument of class %s (failed conversion to student's class loader using Gson. " +
                                     "Consider using @Grade(noSecurity = true), " +
-                                    "use a simpler object type as input or refer to Gson doc to make it compatible)", toLoad);
-                            throw new JsonSyntaxException(message, e);
+                                    "use a simpler object type as input (perhaps you has cyclic references)" +
+                                    " or refer to Gson doc to make it compatible)", toLoad);
+                            throw new InvalidParameterException(message);
                         } catch (ClassNotFoundException e) {
                             String message;
                             if (forbids.contains(toLoad)) {
@@ -504,20 +508,34 @@ public class GraderExtension implements BeforeTestExecutionCallback,
     }
 
     /**
-     * Retrieves the grade annotation responsible for the cpu timeout of this test
-     * Null returned if the cpu timeout was not explicitly specified
+     * Tells if the context should be run with restricted imports or not
+     * This can be achieved by using {@code @Allow("all")} or setting {@link Grade#noRestrictedImport()} to true
      *
      * @param extensionContext
      * @return
      */
-    private Grade getExistingGradeWithNoSecurity(ExtensionContext extensionContext) {
+    private boolean areImportRestricted(ExtensionContext extensionContext) {
+       Grade g = getExistingGradeWithoutRestrictedImport(extensionContext);
+       if (g != null)
+           return false;
+        return !getAllowed(extensionContext).contains("all");
+    }
+
+    /**
+     * Retrieves the grade annotation responsible for the restriction of imports
+     * Null returned if the no import restriction was specified
+     *
+     * @param extensionContext
+     * @return
+     */
+    private Grade getExistingGradeWithoutRestrictedImport(ExtensionContext extensionContext) {
         // first test for the noSecurity
         Grade mGrade = extensionContext.getRequiredTestMethod().getAnnotation(Grade.class);
-        if (mGrade != null && mGrade.noSecurity())
+        if (mGrade != null && mGrade.noRestrictedImport())
             return mGrade;
         // no noSecurity configured for the method, testing the class
         Grade cGrade = extensionContext.getRequiredTestClass().getAnnotation(Grade.class);
-        if (cGrade != null && cGrade.noSecurity())
+        if (cGrade != null && cGrade.noRestrictedImport())
             return cGrade;
         // no noSecurity set on either the class or the method
         return null;
@@ -579,13 +597,12 @@ public class GraderExtension implements BeforeTestExecutionCallback,
         return allowed;
     }
 
-
     /**
      * Cast an object from one class loader to another by using {@link Gson}
      *
      * @return object loaded using the target class loader
      */
-    private <T> T castObj(Object o, Class<T> target) throws JsonSyntaxException {
+    private <T> T castObj(Object o, Class<T> target) throws JsonIOException {
         // Dear God, please forgive me for my sins
         Gson gson = new Gson();
         return gson.fromJson(gson.toJson(o), target);

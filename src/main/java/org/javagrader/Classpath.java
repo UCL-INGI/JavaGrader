@@ -14,20 +14,6 @@ public class Classpath {
     public static final String SYSTEM_PROPERTY = "java.class.path";
     public final Set<PathElement> pathElements;
 
-    public RestrictedClassLoader newClassloader() {
-        ClassLoader parent = this.getClass().getClassLoader().getParent();
-        return new RestrictedClassLoader(
-                pathElements.stream().map(PathElement::toUrl).toArray(URL[]::new),
-                parent);
-    }
-
-    public RestrictedClassLoader newClassloader(Set<String> forbids) {
-        ClassLoader parent = this.getClass().getClassLoader().getParent();
-        return new RestrictedClassLoader(
-                pathElements.stream().map(PathElement::toUrl).toArray(URL[]::new),
-                parent, forbids);
-    }
-
     public RestrictedClassLoader newClassloader(Set<String> forbid, Set<String> allow) {
         ClassLoader parent = this.getClass().getClassLoader().getParent();
         return new RestrictedClassLoader(

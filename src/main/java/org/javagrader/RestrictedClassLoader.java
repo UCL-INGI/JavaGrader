@@ -39,4 +39,10 @@ public class RestrictedClassLoader extends URLClassLoader {
     public boolean isForbidden(String name) {
         return (!(whitelist != null && whitelist.contains(name)) && blacklist != null && blacklist.contains(name));
     }
+
+    public Object convertInstance(String name, byte[] toConvert) {
+        System.out.println(name);
+        Class<?> c = defineClass(name, toConvert, 0, toConvert.length);
+        return c;
+    }
 }

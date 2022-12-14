@@ -1,5 +1,3 @@
-package org.javagrader.student;
-
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;

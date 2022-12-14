@@ -1,15 +1,10 @@
 import org.javagrader.Allow;
 import org.javagrader.Forbid;
 import org.javagrader.Grade;
-import org.javagrader.student.UnauthorizedCode;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import java.util.stream.Stream;
 
 
 @Grade
@@ -51,7 +46,8 @@ public class InvalidImportTest {
     }
 
     @RepeatedTest(2)
-    @Grade(noSecurity = true)
+    @Grade(noRestrictedImport = true)
+    @Allow("all")
     @Forbid("java.lang.Thread")
     public void testWithoutSecurity(RepetitionInfo i) {
         // works even though thread is forbidden, as the security is disabled

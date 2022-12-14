@@ -7,7 +7,7 @@
 
     <groupId>io.github.ucl-ingi</groupId>
     <artifactId>JavaGrader</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
 
     <licenses>

@@ -287,7 +287,7 @@ public void invalidImportTest() {
 }
 ```
 
-Some imports are always forbidden, such as `Thread` or `ClassLoader`. You can optionally allow such imports (bypassing a `@Forbid`)with `@Allow`
+Some imports are always forbidden, such as `Thread` or `ClassLoader`. You can optionally allow such imports (bypassing a `@Forbid`) with `@Allow`. Those two annotation are *inherited*.
 
 ```java
 @Test
@@ -299,14 +299,15 @@ public void validImportTest() {
 }
 ```
 
-Overriding the `ClassLoader` does have some side effects. If you find yourself in trouble when running tests, you can disable this feature with `@Grade(noSecurity = true)`
+Overriding the `ClassLoader` does have some side effects. If you find yourself in trouble when running tests, you can disable this feature with `@Grade(noRestrictedImport = true)` or using `@Allow("all")`
 
 ```java
 @Test
-@Grade(noSecurity = true)
+@Grade(noRestrictedImport = true)
 @Forbid("java.lang.Thread")
 public void testWithoutSecurity() {
-    // works even though thread is forbidden, as the security is disabled
+    // works even though thread is forbidden, as the restricted imports are disabled
+    // same behavior encounted whe using @Allow("all")
     UnauthorizedCode.staticMethodWithThread();
 }
 ```

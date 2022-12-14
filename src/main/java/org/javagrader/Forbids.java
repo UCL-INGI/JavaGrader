@@ -4,7 +4,8 @@ import java.lang.annotation.*;
 
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
+@Target({ ElementType.TYPE, ElementType.METHOD })
+@Inherited
 public @interface Forbids {
 
     Forbid[] value();

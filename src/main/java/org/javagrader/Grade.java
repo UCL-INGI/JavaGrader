@@ -3,7 +3,6 @@ package org.javagrader;
 import java.lang.annotation.*;
 import java.util.concurrent.TimeUnit;
 
-import org.apiguardian.api.API;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,6 +53,6 @@ public @interface Grade {
      *
      * @return
      */
-    boolean noSecurity() default false;
+    boolean noRestrictedImport() default false;
 
 }
