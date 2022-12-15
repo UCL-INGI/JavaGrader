@@ -80,7 +80,7 @@ To add it as a dependency of your project, you can add this to your pom.xml in m
 <dependency>
     <groupId>io.github.ucl-ingi</groupId>
     <artifactId>JavaGrader</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
     <scope>test</scope>
 </dependency>
 ```
