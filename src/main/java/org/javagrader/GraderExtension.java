@@ -117,16 +117,20 @@ public class GraderExtension implements BeforeTestExecutionCallback,
         updateSumTimeouts(context);
     }
 
+    private Duration durationOf(long value, TimeUnit unit) {
+        return Duration.ofNanos(unit.toNanos(value));
+    }
+
     private void updateSumTimeouts(ExtensionContext context) {
         Grade g = getExistingGradeWithCpuTimeout(context);
         Duration wallClocktimeout = Duration.ZERO;
         if (g != null) {
-            sumMaxCpuTimeout = sumMaxCpuTimeout.plus(Duration.of(g.cpuTimeout(), g.unit().toChronoUnit()));
-            wallClocktimeout = Duration.of(g.cpuTimeout() * 3, g.unit().toChronoUnit());
+            sumMaxCpuTimeout = sumMaxCpuTimeout.plus(durationOf(g.cpuTimeout(), g.unit()));
+            wallClocktimeout = durationOf(g.cpuTimeout() * 3, g.unit());
         }
         Timeout t = getExistingGradeWithTimeout(context);
         if (t != null) {
-            sumMaxTimeout = sumMaxTimeout.plus(Duration.of(t.value(), t.unit().toChronoUnit()));
+            sumMaxTimeout = sumMaxTimeout.plus(durationOf(t.value(), t.unit()));
         } else if (!wallClocktimeout.isZero()) {
             sumMaxTimeout = sumMaxTimeout.plus(wallClocktimeout);
         }
@@ -295,7 +299,9 @@ public class GraderExtension implements BeforeTestExecutionCallback,
      * @return readable duration
      */
     private String formatDuration(Duration d) {
-        return String.format("%d:%02d:%02d", d.toHours(), d.toMinutesPart(), d.toSecondsPart());
+        int partialMinutes = (int) (d.toMinutes() % 60L);
+        int partialSeconds = (int) (d.getSeconds() % 60L);
+        return String.format("%d:%02d:%02d", d.toHours(), partialMinutes, partialSeconds);
     }
 
     private void printTable() {
@@ -316,8 +322,9 @@ public class GraderExtension implements BeforeTestExecutionCallback,
         String prefix = globalPrefix(printMode);
         String sep = separator(printMode, SeparatorsType.CONTENT);
         switch (printMode) {
-            case NONE, NORMAL -> {}
-            case RST -> {
+            case NONE: {break;}
+            case NORMAL: {break;}
+            case RST: {
                 System.out.printf("%s%sTOTAL%s%s%s%s%s%s%n",
                         prefix, separator(printMode, SeparatorsType.CLASS_PREFIX),
                         separator(printMode, SeparatorsType.CLASS_SUFFIX), sep, sep,
@@ -326,8 +333,9 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                         prefix, separator(printMode, SeparatorsType.CLASS_PREFIX),
                         separator(printMode, SeparatorsType.CLASS_SUFFIX), sep, sep,
                         RSTBold, formatGrade(gradeWithoutAborted, maxWithoutAborted), RSTBold);
+                break;
             }
-            default -> throw new IllegalArgumentException("Unrecognized printing mode " + printMode);
+            default: throw new IllegalArgumentException("Unrecognized printing mode " + printMode);
         }
         System.out.printf("TOTAL %s%n", formatGrade(grade, maxGrade));
         System.out.printf("TOTAL WITHOUT IGNORED %s%n", formatGrade(gradeWithoutAborted, maxWithoutAborted));
@@ -371,10 +379,20 @@ public class GraderExtension implements BeforeTestExecutionCallback,
             if (g != null) {
                 long timeout = g.cpuTimeout() * 3;
                 Timeout.ThreadMode threadMode = g.threadMode();
-                Duration duration = Duration.of(timeout, g.unit().toChronoUnit());
+                Duration duration = Duration.ofNanos(g.unit().toNanos(timeout));
                 switch (threadMode) {
-                    case INFERRED, SAME_THREAD -> Assertions.assertTimeout(duration, invocation::proceed);
-                    case SEPARATE_THREAD -> Assertions.assertTimeoutPreemptively(duration, invocation::proceed);
+                    case INFERRED: {
+                        Assertions.assertTimeout(duration, invocation::proceed);
+                        break;
+                    }
+                    case SAME_THREAD: {
+                        Assertions.assertTimeout(duration, invocation::proceed);
+                        break;
+                    }
+                    case SEPARATE_THREAD: {
+                        Assertions.assertTimeoutPreemptively(duration, invocation::proceed);
+                        break;
+                    }
                 }
             } else {
                 invocation.proceed();
@@ -463,11 +481,22 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                 if (g != null) {
                     long timeout = g.cpuTimeout() * 3;
                     Timeout.ThreadMode threadMode = g.threadMode();
-                    Duration duration = Duration.of(timeout, g.unit().toChronoUnit());
+                    Duration duration = Duration.ofNanos(g.unit().toNanos(timeout));
+                    //Duration duration = Duration.of(timeout, g.unit().toChronoUnit());
                     BiConsumer<Duration, Executable> timeoutAssert = null;
                     switch (threadMode) {
-                        case INFERRED, SAME_THREAD -> timeoutAssert = Assertions::assertTimeout;
-                        case SEPARATE_THREAD -> timeoutAssert = Assertions::assertTimeoutPreemptively;
+                        case INFERRED: {
+                            timeoutAssert = Assertions::assertTimeout;
+                            break;
+                        }
+                        case SAME_THREAD: {
+                            timeoutAssert = Assertions::assertTimeout;
+                            break;
+                        }
+                        case SEPARATE_THREAD: {
+                            timeoutAssert = Assertions::assertTimeoutPreemptively;
+                            break;
+                        }
                     }
                     timeoutAssert.accept(duration, e);
                 } else {
@@ -573,10 +602,14 @@ public class GraderExtension implements BeforeTestExecutionCallback,
             forbidden.add(cForbid.value());
         if (mForbid != null)
             forbidden.add(mForbid.value());
-        if (cForbids != null)
-            forbidden.addAll(Arrays.stream(cForbids.value()).map(Forbid::value).toList());
-        if (mForbids != null)
-            forbidden.addAll(Arrays.stream(mForbids.value()).map(Forbid::value).toList());
+        if (cForbids != null) {
+            for (Forbid value: cForbids.value())
+                forbidden.add(value.value());
+        }
+        if (mForbids != null) {
+            for (Forbid value: mForbids.value())
+                forbidden.add(value.value());
+        }
         return forbidden;
     }
 
@@ -590,10 +623,14 @@ public class GraderExtension implements BeforeTestExecutionCallback,
             allowed.add(cAllow.value());
         if (mAllow != null)
             allowed.add(mAllow.value());
-        if (cAllows != null)
-            allowed.addAll(Arrays.stream(cAllows.value()).map(Allow::value).toList());
-        if (mAllows != null)
-            allowed.addAll(Arrays.stream(mAllows.value()).map(Allow::value).toList());
+        if (cAllows != null) {
+            for (Allow value: cAllows.value())
+                allowed.add(value.value());
+        }
+        if (mAllows != null) {
+            for (Allow value : mAllows.value())
+                allowed.add(value.value());
+        }
         return allowed;
     }
 

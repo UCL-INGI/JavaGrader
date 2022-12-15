@@ -45,13 +45,13 @@ public class GraderExtensionTest {
                 .testEvents()
                 .assertStatistics(stats -> stats.started(5).succeeded(1).failed(4));
         String s = baos.toString();
-        assertRSTTableOneClass(s, "CustomGradingTest", 1.6, 1, 1.6, 1,
-                List.of(new TestMethod("authorizedWithExtraPointTest", SUCCESS,1, 0.2, "Valid as @Grade(custom = true)"),
-                        new TestMethod("customGradingTestTemplate", SUCCESS,0.2, 0.2, ""),
-                        new TestMethod("authorizedTest1", SUCCESS, 0.2, 0.2, "Valid as @Grade(custom = true)"),
-                        new TestMethod("authorizedTest2", SUCCESS, 0.2, 0.2, "Valid as @Grade(custom = true)"),
-                        new TestMethod("unauthorizedTest", FAIL, 0, 0.2, "")
-                ));
+        List<TestMethod> methodList = new ArrayList<>();
+        methodList.add(new TestMethod("authorizedWithExtraPointTest", SUCCESS,1, 0.2, "Valid as @Grade(custom = true)"));
+        methodList.add(new TestMethod("customGradingTestTemplate", SUCCESS,0.2, 0.2, ""));
+        methodList.add(new TestMethod("authorizedTest1", SUCCESS, 0.2, 0.2, "Valid as @Grade(custom = true)"));
+        methodList.add(new TestMethod("authorizedTest2", SUCCESS, 0.2, 0.2, "Valid as @Grade(custom = true)"));
+        methodList.add(new TestMethod("unauthorizedTest", FAIL, 0, 0.2, ""));
+        assertRSTTableOneClass(s, "CustomGradingTest", 1.6, 1, 1.6, 1, methodList);
     }
 
     @Test
@@ -176,7 +176,21 @@ public class GraderExtensionTest {
                 .assertStatistics(stats -> stats.started(9).succeeded(2).aborted(0).failed(7));
     }
 
-    private record TestMethod(String name, TestResultStatus status, double grade, double maxGrade, String msg) {
+    private class TestMethod {
+
+        String name;
+        TestResultStatus status;
+        double grade;
+        double maxGrade;
+        String msg;
+
+        public TestMethod(String name, TestResultStatus status, double grade, double maxGrade, String msg) {
+            this.name = name;
+            this.status = status;
+            this.grade = grade;
+            this.maxGrade = maxGrade;
+            this.msg =msg;
+        }
 
         public boolean contains(String line) {
             int i = line.indexOf("**→**");

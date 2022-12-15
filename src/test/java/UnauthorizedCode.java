@@ -44,7 +44,11 @@ public class UnauthorizedCode {
                 "TOTAL 1/1\n" +
                 "TOTAL WITHOUT IGNORED 1/1\n" +
                 "--- END GRADE ---");
-        System.setOut(new PrintStream(OutputStream.nullOutputStream()));
+        System.setOut(new PrintStream(new OutputStream() {
+            public void write(int b) {
+                //DO NOTHING);
+            }
+        }));
     }
 
 }

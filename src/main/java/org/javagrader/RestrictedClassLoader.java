@@ -10,7 +10,11 @@ public class RestrictedClassLoader extends URLClassLoader {
     Set<String> blacklist;
     Set<String> whitelist;
 
-    static Set<String> defaultBlackList = Set.of("java.lang.Thread", "java.lang.ClassLoader");
+    static Set<String> defaultBlackList = new HashSet<>();
+    static {
+        defaultBlackList.add("java.lang.Thread");
+        defaultBlackList.add("java.lang.ClassLoader");
+    }
     static Set<String> defaultWhitelist = null;
 
     public RestrictedClassLoader(URL[] urls, ClassLoader parent) {

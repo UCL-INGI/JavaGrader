@@ -85,6 +85,7 @@ public class TimeoutTest {
         }
     }
 
+    // fails as the wall clock timeout is exceeded
     @RepeatedTest(2)
     @Grade(cpuTimeout = 50, unit = TimeUnit.MILLISECONDS)
     @Allow("java.lang.Thread")
