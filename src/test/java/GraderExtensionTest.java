@@ -150,10 +150,20 @@ public class GraderExtensionTest {
     public void orderedTest() {
         EngineTestKit
                 .engine("junit-jupiter")
-                .selectors(selectClass(OrderedTest.class))
+                .selectors(selectClass(ConditionalOrderedTest.class))
                 .execute()
                 .testEvents()
                 .assertStatistics(stats -> stats.started(2).succeeded(1).aborted(0).failed(1));
+    }
+
+    @Test
+    public void multiOrderedTest() {
+        EngineTestKit
+                .engine("junit-jupiter")
+                .selectors(selectClass(MultiConditionalOrderedTest.class))
+                .execute()
+                .allEvents()
+                .assertStatistics(stats -> stats.started(12).succeeded(9).aborted(0).failed(3));
     }
 
     @Test

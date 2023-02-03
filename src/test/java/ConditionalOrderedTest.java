@@ -1,10 +1,6 @@
 import org.javagrader.ConditionalOrderingExtension;
 import org.javagrader.Grade;
-import org.javagrader.GraderExtension;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(ConditionalOrderingExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Grade
-public class OrderedTest {
+public class ConditionalOrderedTest {
 
     @Test
     @Order(1)

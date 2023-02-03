@@ -2,6 +2,7 @@ package org.javagrader;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.security.InvalidParameterException;
 import java.time.Duration;
@@ -416,7 +417,19 @@ public class GraderExtension implements BeforeTestExecutionCallback,
                 }
                 final String methodName = extensionContext.getRequiredTestMethod().getName();
                 Method m = extensionContext.getRequiredTestMethod();
-                Object testInstance = ReflectionUtils.newInstance(testClass);
+                Object testInstance;
+                if (!ReflectionUtils.isStatic(testClass) && ReflectionUtils.isInnerClass(testClass)) {
+                    // dealing with a non-static nested class
+                    // instantiate the outer class
+                    Class<?> enclosingClass = modifiedClassLoader.loadClass(testClass.getDeclaringClass().getName());
+                    Object enclosingInstance = ReflectionUtils.newInstance(enclosingClass);
+                    Constructor<?> ctor = testClass.getDeclaredConstructor(enclosingClass);
+                    ctor.setAccessible(true);
+
+                    testInstance = ctor.newInstance(enclosingInstance);
+                } else {
+                    testInstance = ReflectionUtils.newInstance(testClass);
+                }
                 List<Object> l = invocationContext.getArguments();
                 Class<?>[] paramTypes = m.getParameterTypes();
                 for (Class<?> c : paramTypes) {
